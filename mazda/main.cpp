@@ -119,25 +119,25 @@ static void gps_thread_func(std::condition_variable& quitcv, std::mutex& quitmut
                 location->set_longitude(static_cast<int32_t>(data.longitude * 1E7));
 
                 // If the sd card exists then reverse heading. This should only be used on installs that have the 
-                // reversed heading issue. Maybe gate it by a config file
-                const char* sdCardFolder;
-                sdCardFolder = SD_CARD_PATH;
-                struct stat sb;
-                double newHeading;
-    
-                if (stat(sdCardFolder, &sb) == 0 && S_ISDIR(sb.st_mode))
-                {	
-                    newHeading = data.heading + 180;
-                    if (newHeading >= 360)
-                    {
-                        newHeading = newHeading - 360;
-                    }
-                }
-                else
+                // reversed heading issue.
+                double newHeading = data.heading;
+
+                if (config::reverseGPS)
                 {
-                    newHeading = data.heading;
-                }
-                
+                    const char* sdCardFolder;
+                    sdCardFolder = SD_CARD_PATH;
+                    struct stat sb;
+    
+                    if (stat(sdCardFolder, &sb) == 0 && S_ISDIR(sb.st_mode))
+                    {
+                        newHeading = data.heading + 180;
+                        if (newHeading >= 360)
+                        {
+                            newHeading = newHeading - 360;
+                        }
+                    }
+				}
+
                 location->set_bearing(static_cast<int32_t>(newHeading * 1E6));
                 //assuming these are the same units as the Android Location API (the rest are)
                 double velocityMetersPerSecond = data.velocity * 0.277778; //convert km/h to m/s
